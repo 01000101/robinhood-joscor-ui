@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="app">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Robinhood (Joscor UI)</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet"
+          href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+          crossorigin="anonymous">
+
+    <!-- AngularJS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.1/angular.min.js"
+            integrity="sha256-3SrLjPeRPa1ofM280r+OMcUjJZKLWJHr6SRtRu3dRb0="
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ngStorage/0.3.11/ngStorage.min.js"
+            integrity="sha256-0YzDSJS0qH+wpvug+Im1cMB9CX919NMtHj0d2VVHPp4="
+            crossorigin="anonymous"></script>
+
+    <!-- Bootstrap JS (Angular) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.4.0/ui-bootstrap-tpls.min.js"
+            integrity="sha384-sp5Vme6eUFuFxGUECLqqhQacms1O7PMAEy0zVvR39Is6JCQZH9KR3QHwatd0op1z"
+            crossorigin="anonymous"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"
+            integrity="sha256-aUydBd3D3p3+5tVJXERlqMtoCej+p4tdD+dkJgeRWNU="
+            crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-chart.js/1.1.1/angular-chart.min.js"
+            integrity="sha256-ydmVOl8gRR1E4yD1OC/aQdLNPCIKXSHIpl9yOu8EWek="
+            crossorigin="anonymous"></script>
+
+    <!-- Application -->
+    <script type="text/javascript" src="app/app.js"></script>
+  </head>
+  <body ng-controller="MainCtrl">
+    <div class="container">
+
+      <!-- Top navigation -->
+      <div class="row" ng-show="init && user">
+        <div class="col-xs-12">
+          <nav class="navbar navbar-default">
+            <div class="container-fluid">
+              <div class="navbar-header">
+                <span class="navbar-brand">Robinhood (Joscor UI)</span>
+              </div>
+
+              <ul class="nav navbar-nav navbar-right">
+                <li>
+                  <p class="navbar-text">
+                    {{ user.first_name }} {{ user.last_name }}
+                  </p>
+                </li>
+                <li style="border-left: 1px darkgrey solid;">
+                  <p class="navbar-text">
+                    <a href="#" ng-click="logout()">
+                      Logout
+                    </a>
+                  </p>
+                </li>
+              </ul>
+            </div>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Error messages alert box -->
+      <div class="row" ng-show="error_msg">
+        <div class="col-xs-12">
+          <div class="alert alert-danger" role="alert">
+            <strong>Error! </strong>{{ error_msg }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Login / authentication prompt -->
+      <div class="row" ng-if="init && !user">
+        <div class="col-xs-12 col-sm-10 col-sm-offset-1 col-md-8 col-md-offset-2">
+          <h2>RH Dashboard by Joscor</h2>
+          <div class="panel panel-default">
+            <div class="panel-body">
+
+              <p class="lead">
+                Login with Username & Password
+              </p>
+              <div class="form-group">
+                <input type="text" class="form-control"
+                       id="rh_username" placeholder="Robinhood Username"
+                       ng-model="form_rh_username">
+              </div>
+              <div class="form-group">
+                <input type="password" class="form-control"
+                       id="rh_password" placeholder="Robinhood Password"
+                       ng-model="form_rh_password">
+              </div>
+              <button class="btn btn-success pull-right"
+                      type="button"
+                      ng-click="authenticate_legacy(form_rh_username, form_rh_password); form_rh_username = form_rh_password = '';"
+                      ng-disabled="!form_rh_username || !form_rh_password">
+                Login
+              </button>
+              <div class="clearfix"></div>
+
+              <div style="width: 100%; height: 15px; border-bottom: 2px solid black; margin: 10px 0; text-align: center">
+                <span style="font-size: 20px; background-color: white; padding: 0 10px;">
+                  OR
+                </span>
+              </div>
+
+              <p class="lead">
+                Login with API access token
+              </p>
+
+              <div class="input-group">
+                <input type="password" class="form-control"
+                       id="rh_token" placeholder="Robinhood Access Token"
+                       ng-model="form_rh_token">
+                <span class="input-group-btn">
+                  <button class="btn btn-success"
+                          type="button"
+                          ng-click="authenticate(form_rh_token); form_rh_token = '';"
+                          ng-disabled="!form_rh_token">
+                    Login
+                  </button>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress bar (when loading initial data) -->
+      <div class="row" ng-show="init && progress.val < progress.max">
+        <div class="col-xs-12">
+          <h3>Loading...</h3>
+          <uib-progressbar max="progress.max" value="progress.val">
+            <span style="color: white; white-space:nowrap;">
+              {{(progress.val / progress.max) * 100 | number:0}} / 100 %
+            </span>
+          </uib-progressbar>
+        </div>
+      </div>
+
+      <!-- Positions table -->
+      <div class="row" ng-if="init && user && progress.max && progress.val >= progress.max">
+        <div class="col-xs-12">
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              Portfolio overview
+            </div>
+            <div class="panel-body">
+              <p>
+                This web tool visualizes investment data from your Robinhood
+                brokerage account. The goal is to give investors a meta
+                view of their investments to adhere to investment and
+                distribution goals.
+              </p>
+            </div>
+
+            <table class="table table-hover table-condensed">
+              <thead>
+                <tr style="font-weight: bold;">
+                  <td>
+                    <a href="#"
+                       ng-click="orderby='instrument.symbol'; orderdir = !orderdir">
+                      Symbol
+                    </a>
+                  </td>
+                  <td>
+                    <a href="#"
+                       ng-click="orderby='quantity'; orderdir = !orderdir">
+                      Shares
+                    </a>
+                  </td>
+                  <td>
+                    <a href="#"
+                       ng-click="orderby='average_buy_price'; orderdir = !orderdir">
+                      Cost / Share
+                    </a>
+                  </td>
+                  <td>
+                    <a href="#"
+                       ng-click="orderby='fundamental.pe_ratio'; orderdir = !orderdir">
+                      P/E Ratio
+                    </a>
+                  </td>
+                  <td>
+                    <a href="#"
+                       ng-click="orderby='fundamental.dividend_yield'; orderdir = !orderdir">
+                      Div. Yield
+                    </a>
+                  </td>
+                  <td>
+                    <a href="#" ng-click="orderby='total_cost'; orderdir = !orderdir">
+                      Cost ($)
+                    </a>
+                  </td>
+                  <td>
+                    <a href="#" ng-click="orderby='quote.total_value'; orderdir = !orderdir">
+                      Value ($)
+                    </a>
+                  </td>
+                  <td>
+                    <a href="#" ng-click="orderby='quote.total_value'; orderdir = !orderdir">
+                      Portfolio (%)
+                    </a>
+                  </td>
+                </tr>
+              </thead>
+              <tbody>
+                <tr ng-repeat="position in positions | orderBy:orderby:orderdir">
+                  <td>
+                    <a ng-href="https://finance.yahoo.com/quote/{{position.instrument.symbol}}"
+                       target="_blank">
+                      {{ position.instrument.symbol }}
+                    </a>
+                  </td>
+                  <td>
+                    {{ position.quantity | number:2 }}
+                  </td>
+                  <td>
+                    {{ position.average_buy_price | currency }}
+                  </td>
+                  <td>
+                    {{ position.fundamental.pe_ratio | number:2 }}
+                  </td>
+                  <td>
+                    {{ position.fundamental.dividend_yield | number:2 }}
+                  </td>
+                  <td>
+                    {{ position.total_cost| currency }}
+                  </td>
+                  <td>
+                    {{ position.quote.total_value | currency }}
+                  </td>
+                  <td>
+                    {{ (position.quote.total_value / get_total_values()) * 100 | number:2 }}%
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr style="font-weight: bold;">
+                  <td colspan="5">
+                    Portfolio totals
+                  </td>
+                  <td>
+                    {{ get_total_costs() | currency }}
+                  </td>
+                  <td>
+                    {{ get_total_values() | currency }}
+                  </td>
+                  <td>
+                    {{ get_total_percentages() | number:2 }}%
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Distribution (by position) charts -->
+      <div class="row" ng-show="init && user && progress.max && progress.val >= progress.max">
+        <div class="col-xs-12 col-sm-6 col-md-4">
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <h3 class="panel-title">Distribution (by position)</h3>
+            </div>
+            <div class="panel-body">
+              <canvas id="pie" class="chart chart-pie"
+                      chart-data="data" chart-labels="labels"
+                      chart-options="options">
+              </canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-xs-12 col-sm-6 col-md-4">
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <h3 class="panel-title">Distribution (by position)</h3>
+            </div>
+            <div class="panel-body">
+              <canvas id="radar" class="chart chart-radar"
+                      chart-data="data" chart-labels="labels"
+                      chart-options="options">
+              </canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-xs-12 col-sm-6 col-md-4">
+          <div class="panel panel-default">
+            <div class="panel-heading">
+              <h3 class="panel-title">Distribution (by position)</h3>
+            </div>
+            <div class="panel-body">
+              <canvas id="polar-area" class="chart chart-polar-area"
+                      chart-data="data" chart-labels="labels"
+                      chart-options="options">
+              </canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
