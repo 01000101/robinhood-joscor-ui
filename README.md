@@ -19,7 +19,7 @@ is also no database in use here and local browser storage is used for persistenc
 **Install guide**
 
 Change directories into the */api/* project folder. Then simply 
-install the project requirements by running `pip install -e requirements`
+install the project requirements by running `pip install -r requirements`
 
 This will install Flask(-RESTful) which is what the project uses to create 
 the API service. That's all of the requirements needed. 
